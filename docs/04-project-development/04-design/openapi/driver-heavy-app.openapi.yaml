@@ -1,0 +1,704 @@
+openapi: 3.1.0
+info:
+  title: ride-loop Driver Heavy App API
+  version: 1.0.0-draft
+  summary: 千乘坊司机重端 App 接口契约
+  description: |
+    设计阶段接口合同。用于司机重端 Android 优先版的接单、行程推进和申诉联调。
+servers:
+  - url: https://api.ride-loop.local
+tags:
+  - name: Auth
+  - name: Runtime
+  - name: Dispatch
+  - name: Trip
+  - name: Order
+  - name: Message
+  - name: Support
+security:
+  - bearerAuth: []
+paths:
+  /api/v1/auth/session:
+    post:
+      tags: [Auth]
+      operationId: createDriverAppSession
+      summary: 创建司机重端会话
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [account, credential, clientType]
+              properties:
+                account:
+                  type: string
+                credential:
+                  type: string
+                clientType:
+                  type: string
+                  enum: [driver-app]
+      responses:
+        '200':
+          description: 登录成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionResponse'
+  /api/v1/me/profile:
+    get:
+      tags: [Auth]
+      operationId: getDriverAppProfile
+      summary: 查询当前司机身份与能力
+      responses:
+        '200':
+          description: 身份信息
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfileResponse'
+  /api/v1/driver-app/session/bootstrap:
+    post:
+      tags: [Runtime]
+      operationId: bootstrapDriverAppSession
+      summary: 重端启动初始化
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BootstrapRequest'
+      responses:
+        '200':
+          description: 初始化成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BootstrapResponse'
+  /api/v1/driver-app/devices/bind:
+    post:
+      tags: [Runtime]
+      operationId: bindDriverAppDevice
+      summary: 绑定司机设备
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeviceBindRequest'
+      responses:
+        '200':
+          description: 绑定结果
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeviceBindResponse'
+  /api/v1/driver-app/runtime/status:
+    post:
+      tags: [Runtime]
+      operationId: updateDriverRuntimeStatus
+      summary: 切换上下线状态
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RuntimeStatusRequest'
+      responses:
+        '200':
+          description: 状态切换结果
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RuntimeStatusResponse'
+  /api/v1/driver-app/runtime/heartbeat:
+    post:
+      tags: [Runtime]
+      operationId: heartbeatDriverRuntime
+      summary: 上报心跳与定位
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RuntimeHeartbeatRequest'
+      responses:
+        '200':
+          description: 心跳成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RuntimeHeartbeatResponse'
+  /api/v1/driver-app/dispatch/current:
+    get:
+      tags: [Dispatch]
+      operationId: getCurrentDispatch
+      summary: 查询当前待响应派单
+      parameters:
+        - in: query
+          name: deviceId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 当前派单
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CurrentDispatchResponse'
+  /api/v1/driver-app/dispatch/{dispatchId}/actions:
+    post:
+      tags: [Dispatch]
+      operationId: actOnDispatch
+      summary: 接单或拒单
+      parameters:
+        - $ref: '#/components/parameters/DispatchId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DispatchActionRequest'
+      responses:
+        '200':
+          description: 处理结果
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DispatchActionResponse'
+  /api/v1/driver-app/trips/{tripId}/status:
+    post:
+      tags: [Trip]
+      operationId: pushTripStatus
+      summary: 推进行程状态
+      parameters:
+        - $ref: '#/components/parameters/TripId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TripStatusRequest'
+      responses:
+        '200':
+          description: 推进成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TripStatusResponse'
+  /api/v1/driver-app/trips/{tripId}/exceptions:
+    post:
+      tags: [Trip]
+      operationId: createTripException
+      summary: 上报行程异常
+      parameters:
+        - $ref: '#/components/parameters/TripId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TripExceptionRequest'
+      responses:
+        '200':
+          description: 异常已受理
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TripExceptionResponse'
+  /api/v1/driver-app/orders:
+    get:
+      tags: [Order]
+      operationId: listDriverAppOrders
+      summary: 查询历史订单与详情
+      parameters:
+        - in: query
+          name: tripId
+          schema:
+            type: string
+        - in: query
+          name: status
+          schema:
+            type: string
+        - in: query
+          name: pageNo
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: pageSize
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: 订单列表或详情
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DriverOrderListResponse'
+  /api/v1/ride/orders/{orderId}:
+    get:
+      tags: [Order]
+      operationId: getDriverAppRideOrderDetail
+      summary: 查询行程订单深度详情
+      parameters:
+        - $ref: '#/components/parameters/OrderId'
+      responses:
+        '200':
+          description: 行程订单详情
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RideOrderDetailResponse'
+  /api/v1/messages:
+    get:
+      tags: [Message]
+      operationId: listDriverAppMessages
+      summary: 查询司机普通消息
+      parameters:
+        - in: query
+          name: receiverRole
+          required: true
+          schema:
+            type: string
+            enum: [driver]
+        - in: query
+          name: clientType
+          required: true
+          schema:
+            type: string
+            enum: [driver-app]
+        - in: query
+          name: pageNo
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: pageSize
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: 消息列表
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageListResponse'
+  /api/v1/support/tickets:
+    post:
+      tags: [Support]
+      operationId: createDriverAppSupportTicket
+      summary: 创建行程申诉工单
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SupportTicketCreateRequest'
+      responses:
+        '200':
+          description: 申诉工单已创建
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupportTicketResponse'
+    get:
+      tags: [Support]
+      operationId: listDriverAppSupportTickets
+      summary: 查询申诉工单
+      parameters:
+        - in: query
+          name: initiatorRole
+          required: true
+          schema:
+            type: string
+            enum: [driver]
+        - in: query
+          name: bizType
+          schema:
+            type: string
+            enum: [ride-order]
+        - in: query
+          name: pageNo
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: pageSize
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: 工单列表
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupportTicketListResponse'
+  /api/v1/support/tickets/{ticketId}:
+    get:
+      tags: [Support]
+      operationId: getDriverAppSupportTicketDetail
+      summary: 查询工单详情
+      parameters:
+        - $ref: '#/components/parameters/TicketId'
+      responses:
+        '200':
+          description: 工单详情
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupportTicketDetailResponse'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    DispatchId:
+      in: path
+      name: dispatchId
+      required: true
+      schema:
+        type: string
+    TripId:
+      in: path
+      name: tripId
+      required: true
+      schema:
+        type: string
+    OrderId:
+      in: path
+      name: orderId
+      required: true
+      schema:
+        type: string
+    TicketId:
+      in: path
+      name: ticketId
+      required: true
+      schema:
+        type: string
+    IdempotencyKey:
+      in: header
+      name: X-Idempotency-Key
+      required: true
+      schema:
+        type: string
+  schemas:
+    SessionResponse:
+      type: object
+      properties:
+        sessionToken:
+          type: string
+        userId:
+          type: string
+        roles:
+          type: array
+          items:
+            type: string
+    ProfileResponse:
+      type: object
+      properties:
+        driverId:
+          type: string
+        roles:
+          type: array
+          items:
+            type: string
+        driverCapabilityStatus:
+          type: string
+        deviceBindingStatus:
+          type: string
+    BootstrapRequest:
+      type: object
+      required: [deviceId, appVersion, osVersion]
+      properties:
+        deviceId:
+          type: string
+        appVersion:
+          type: string
+        osVersion:
+          type: string
+        pushToken:
+          type: string
+    BootstrapResponse:
+      type: object
+      properties:
+        driverStatus:
+          type: string
+        bindStatus:
+          type: string
+        permissionChecklist:
+          type: array
+          items:
+            type: object
+            properties:
+              permission:
+                type: string
+              required:
+                type: boolean
+              granted:
+                type: boolean
+        activeTrip:
+          type: object
+        forceUpgrade:
+          type: boolean
+    DeviceBindRequest:
+      type: object
+      required: [deviceId, deviceFingerprint]
+      properties:
+        deviceId:
+          type: string
+        deviceFingerprint:
+          type: string
+        smsCode:
+          type: string
+        reviewToken:
+          type: string
+    DeviceBindResponse:
+      type: object
+      properties:
+        bindStatus:
+          type: string
+        boundAt:
+          type: string
+          format: date-time
+        replaceRequired:
+          type: boolean
+    RuntimeStatusRequest:
+      type: object
+      required: [targetStatus, deviceId]
+      properties:
+        targetStatus:
+          type: string
+          enum: [online, offline]
+        deviceId:
+          type: string
+        locationSnapshot:
+          $ref: '#/components/schemas/LocationSnapshot'
+    RuntimeStatusResponse:
+      type: object
+      properties:
+        runtimeStatus:
+          type: string
+          enum: [offline, online, unreliable, in_trip]
+        effectiveAt:
+          type: string
+          format: date-time
+        blockReason:
+          type: string
+    RuntimeHeartbeatRequest:
+      type: object
+      required: [deviceId, runtimeStatus, location]
+      properties:
+        deviceId:
+          type: string
+        runtimeStatus:
+          type: string
+        location:
+          $ref: '#/components/schemas/LocationSnapshot'
+        battery:
+          type: integer
+        networkType:
+          type: string
+    RuntimeHeartbeatResponse:
+      type: object
+      properties:
+        serverTime:
+          type: string
+          format: date-time
+        dispatchHint:
+          type: string
+        healthWarnings:
+          type: array
+          items:
+            type: string
+    CurrentDispatchResponse:
+      type: object
+      properties:
+        dispatchId:
+          type: string
+        pickup:
+          type: string
+        destination:
+          type: string
+        countdown:
+          type: integer
+        estimatedIncome:
+          type: number
+    DispatchActionRequest:
+      type: object
+      required: [action, deviceId]
+      properties:
+        action:
+          type: string
+          enum: [accept, reject, timeoutAck]
+        reason:
+          type: string
+        deviceId:
+          type: string
+    DispatchActionResponse:
+      type: object
+      properties:
+        dispatchStatus:
+          type: string
+        tripId:
+          type: string
+        nextRuntimeStatus:
+          type: string
+    TripStatusRequest:
+      type: object
+      required: [action, location, occurredAt]
+      properties:
+        action:
+          type: string
+          enum: [arrive, start, finish]
+        location:
+          $ref: '#/components/schemas/LocationSnapshot'
+        occurredAt:
+          type: string
+          format: date-time
+    TripStatusResponse:
+      type: object
+      properties:
+        tripStatus:
+          type: string
+        timeline:
+          type: array
+          items:
+            type: object
+        nextAllowedActions:
+          type: array
+          items:
+            type: string
+    TripExceptionRequest:
+      type: object
+      required: [exceptionType, description]
+      properties:
+        exceptionType:
+          type: string
+          enum: [passenger_no_show, passenger_refuse, route_issue, traffic_issue, platform_intervention]
+        description:
+          type: string
+        attachments:
+          type: array
+          items:
+            type: string
+        requestedAction:
+          type: string
+          enum: [report_only, cancel_request, platform_help]
+    TripExceptionResponse:
+      type: object
+      properties:
+        ticketId:
+          type: string
+        tripStatus:
+          type: string
+        caseStatus:
+          type: string
+    DriverOrderListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              tripId:
+                type: string
+              orderStatus:
+                type: string
+              amount:
+                type: number
+              startedAt:
+                type: string
+                format: date-time
+        tripDetail:
+          type: object
+        total:
+          type: integer
+    RideOrderDetailResponse:
+      type: object
+      properties:
+        orderId:
+          type: string
+        orderStatus:
+          type: string
+        pricing:
+          type: object
+        cancelReason:
+          type: string
+        timeline:
+          type: array
+          items:
+            type: object
+    MessageListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+        unreadCount:
+          type: integer
+    SupportTicketCreateRequest:
+      type: object
+      required: [bizType, bizId, ticketType, description]
+      properties:
+        bizType:
+          type: string
+          enum: [ride-order]
+        bizId:
+          type: string
+        ticketType:
+          type: string
+          enum: [appeal, exception_followup, complaint]
+        description:
+          type: string
+        attachments:
+          type: array
+          items:
+            type: string
+    SupportTicketResponse:
+      type: object
+      properties:
+        ticketId:
+          type: string
+        status:
+          type: string
+    SupportTicketListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+        total:
+          type: integer
+    SupportTicketDetailResponse:
+      type: object
+      properties:
+        ticket:
+          type: object
+        timeline:
+          type: array
+          items:
+            type: object
+    LocationSnapshot:
+      type: object
+      required: [lng, lat]
+      properties:
+        lng:
+          type: number
+        lat:
+          type: number
+        accuracy:
+          type: number

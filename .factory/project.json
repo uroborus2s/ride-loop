@@ -1,0 +1,39 @@
+{
+  "project_name": "ride-loop",
+  "project_name_zh": "千乘坊",
+  "project_display_name": "千乘坊（ride-loop）",
+  "project_type": "o2o-local-commerce-and-ride-platform",
+  "languages": [
+    "typescript",
+    "go"
+  ],
+  "package_manager": "pnpm",
+  "baseline_date": "2026-03-29",
+  "current_stage": "PLAN",
+  "recommended_next_stage": "IMPLEMENTATION",
+  "stack": "wechat mini program + nodejs stratix + go dispatch + postgresql + redis",
+  "known_risks": [
+    "公开可安装的 Stratix 版本与技能版本锚点不一致",
+    "当前环境没有本地 Go 工具链",
+    "支付与地图供应商尚未最终确定"
+  ],
+  "entry_docs": [
+    "docs/04-project-development/02-discovery/brainstorm-record.md",
+    "docs/04-project-development/03-requirements/prd.md",
+    "docs/04-project-development/04-design/system-architecture.md",
+    "docs/04-project-development/04-design/module-boundaries.md",
+    "docs/04-project-development/05-development-process/implementation-plan.md"
+  ],
+  "technical_profile": {
+    "id": "ride-loop-dual-core",
+    "title": "千乘坊双核服务画像",
+    "summary": "主业务使用 Node.js + Stratix，调度使用 Go，商城与出行双主线同仓推进，订单和台账事实集中在 platform-core。",
+    "required_skills": [
+      "software-factory-cli",
+      "requirements-engineering",
+      "document-templates",
+      "stratix-nodejs-backend"
+    ]
+  }
+}
+

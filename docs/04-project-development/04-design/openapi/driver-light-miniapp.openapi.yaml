@@ -1,0 +1,884 @@
+openapi: 3.1.0
+info:
+  title: ride-loop Driver Light Miniapp API
+  version: 1.0.0-draft
+  summary: 千乘坊司机轻端微信小程序接口契约
+  description: |
+    设计阶段接口合同。用于司机轻端页面、收益中心、分销中心和司机专区联调。
+servers:
+  - url: https://api.ride-loop.local
+tags:
+  - name: Auth
+  - name: Profile
+  - name: DriverAccess
+  - name: DriverDashboard
+  - name: Distribution
+  - name: Finance
+  - name: DriverZone
+  - name: Message
+  - name: Support
+security:
+  - bearerAuth: []
+paths:
+  /api/v1/auth/session:
+    post:
+      tags: [Auth]
+      operationId: createDriverMiniappSession
+      summary: 创建司机轻端会话
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [wechatCode, clientType]
+              properties:
+                wechatCode:
+                  type: string
+                clientType:
+                  type: string
+                  enum: [driver-miniapp]
+      responses:
+        '200':
+          description: 会话创建成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionResponse'
+  /api/v1/me/profile:
+    get:
+      tags: [Profile]
+      operationId: getDriverMiniappProfile
+      summary: 查询司机身份与能力
+      responses:
+        '200':
+          description: 身份信息
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfileResponse'
+  /api/v1/driver/access/applications:
+    post:
+      tags: [DriverAccess]
+      operationId: submitDriverAccessApplication
+      summary: 保存或提交司机入驻申请
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DriverAccessApplicationRequest'
+      responses:
+        '200':
+          description: 保存或提交成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DriverAccessApplicationResponse'
+  /api/v1/driver/access/application:
+    get:
+      tags: [DriverAccess]
+      operationId: getDriverAccessApplication
+      summary: 查询当前司机申请与审核状态
+      responses:
+        '200':
+          description: 当前申请状态
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DriverAccessStatusResponse'
+  /api/v1/driver/dashboard:
+    get:
+      tags: [DriverDashboard]
+      operationId: getDriverDashboard
+      summary: 查询司机工作台聚合数据
+      parameters:
+        - in: query
+          name: cityCode
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 工作台数据
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DriverDashboardResponse'
+  /api/v1/driver/distribution/qrcodes:
+    get:
+      tags: [Distribution]
+      operationId: listDriverQRCodes
+      summary: 查询二维码资产
+      parameters:
+        - in: query
+          name: scene
+          schema:
+            type: string
+            enum: [mall, driver-zone, ride, campaign]
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [active, disabled, expired]
+        - $ref: '#/components/parameters/PageNo'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: 二维码列表
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QRCodeListResponse'
+    post:
+      tags: [Distribution]
+      operationId: createDriverQRCode
+      summary: 创建二维码资产
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QRCodeCreateRequest'
+      responses:
+        '200':
+          description: 创建成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QRCodeCreateResponse'
+  /api/v1/driver/distribution/orders:
+    get:
+      tags: [Distribution]
+      operationId: listDriverAttributedOrders
+      summary: 查询归因订单
+      parameters:
+        - in: query
+          name: businessType
+          schema:
+            type: string
+            enum: [mall, ride, all]
+        - in: query
+          name: payStatus
+          schema:
+            type: string
+            enum: [pending_pay, paid, refunded]
+        - $ref: '#/components/parameters/PageNo'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: 归因订单列表
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AttributedOrderListResponse'
+  /api/v1/driver/finance/summary:
+    get:
+      tags: [Finance]
+      operationId: getDriverFinanceSummary
+      summary: 查询收益总览
+      parameters:
+        - in: query
+          name: cityCode
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 收益总览
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinanceSummaryResponse'
+  /api/v1/driver/finance/ledger:
+    get:
+      tags: [Finance]
+      operationId: listDriverLedgerEntries
+      summary: 查询台账明细
+      parameters:
+        - in: query
+          name: ledgerType
+          schema:
+            type: string
+            enum: [commission, wallet, coupon, refund, consume]
+        - $ref: '#/components/parameters/PageNo'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: 台账列表
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LedgerListResponse'
+  /api/v1/driver/finance/coupons:
+    get:
+      tags: [Finance]
+      operationId: listDriverCoupons
+      summary: 查询券列表
+      parameters:
+        - in: query
+          name: couponStatus
+          schema:
+            type: string
+            enum: [active, used, expired, reversed]
+        - $ref: '#/components/parameters/PageNo'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: 券列表
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CouponListResponse'
+  /api/v1/mall/products:
+    get:
+      tags: [DriverZone]
+      operationId: listDriverZoneProducts
+      summary: 查询司机专区商品
+      parameters:
+        - in: query
+          name: scene
+          required: true
+          schema:
+            type: string
+            enum: [driver-zone]
+        - in: query
+          name: categoryId
+          schema:
+            type: string
+        - $ref: '#/components/parameters/PageNo'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: 商品列表
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductListResponse'
+  /api/v1/mall/products/{productId}:
+    get:
+      tags: [DriverZone]
+      operationId: getDriverZoneProductDetail
+      summary: 查询司机专区商品详情
+      parameters:
+        - $ref: '#/components/parameters/ProductId'
+        - in: query
+          name: scene
+          required: true
+          schema:
+            type: string
+            enum: [driver-zone]
+      responses:
+        '200':
+          description: 商品详情
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductDetailResponse'
+  /api/v1/mall/orders:
+    post:
+      tags: [DriverZone]
+      operationId: createDriverZoneOrder
+      summary: 创建司机专区订单
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DriverZoneOrderCreateRequest'
+      responses:
+        '200':
+          description: 订单创建成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MallOrderResponse'
+    get:
+      tags: [DriverZone]
+      operationId: listDriverZoneOrders
+      summary: 查询司机专区订单列表
+      parameters:
+        - in: query
+          name: scene
+          required: true
+          schema:
+            type: string
+            enum: [driver-zone]
+        - in: query
+          name: orderStatus
+          schema:
+            type: string
+            enum: [pending_pay, paid, fulfilling, completed, refunding, refunded]
+        - $ref: '#/components/parameters/PageNo'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: 订单列表
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MallOrderListResponse'
+  /api/v1/mall/orders/{orderId}:
+    get:
+      tags: [DriverZone]
+      operationId: getDriverZoneOrderDetail
+      summary: 查询司机专区订单详情
+      parameters:
+        - $ref: '#/components/parameters/OrderId'
+      responses:
+        '200':
+          description: 订单详情
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MallOrderDetailResponse'
+  /api/v1/messages:
+    get:
+      tags: [Message]
+      operationId: listDriverMiniappMessages
+      summary: 查询轻端消息列表
+      parameters:
+        - in: query
+          name: receiverRole
+          required: true
+          schema:
+            type: string
+            enum: [driver]
+        - in: query
+          name: messageType
+          schema:
+            type: string
+            enum: [audit, income, campaign, support]
+        - $ref: '#/components/parameters/PageNo'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: 消息列表
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageListResponse'
+  /api/v1/support/tickets:
+    post:
+      tags: [Support]
+      operationId: createDriverMiniappTicket
+      summary: 创建司机工单
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SupportTicketCreateRequest'
+      responses:
+        '200':
+          description: 工单创建成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupportTicketResponse'
+    get:
+      tags: [Support]
+      operationId: listDriverMiniappTickets
+      summary: 查询司机工单
+      parameters:
+        - in: query
+          name: initiatorRole
+          required: true
+          schema:
+            type: string
+            enum: [driver]
+        - $ref: '#/components/parameters/PageNo'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: 工单列表
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupportTicketListResponse'
+  /api/v1/support/tickets/{ticketId}:
+    get:
+      tags: [Support]
+      operationId: getDriverMiniappTicketDetail
+      summary: 查询工单详情
+      parameters:
+        - $ref: '#/components/parameters/TicketId'
+      responses:
+        '200':
+          description: 工单详情
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupportTicketDetailResponse'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    ProductId:
+      in: path
+      name: productId
+      required: true
+      schema:
+        type: string
+    OrderId:
+      in: path
+      name: orderId
+      required: true
+      schema:
+        type: string
+    TicketId:
+      in: path
+      name: ticketId
+      required: true
+      schema:
+        type: string
+    IdempotencyKey:
+      in: header
+      name: X-Idempotency-Key
+      required: true
+      schema:
+        type: string
+    PageNo:
+      in: query
+      name: pageNo
+      schema:
+        type: integer
+        default: 1
+    PageSize:
+      in: query
+      name: pageSize
+      schema:
+        type: integer
+        default: 20
+  schemas:
+    SessionResponse:
+      type: object
+      properties:
+        sessionToken:
+          type: string
+        userId:
+          type: string
+        roles:
+          type: array
+          items:
+            type: string
+    ProfileResponse:
+      type: object
+      properties:
+        userId:
+          type: string
+        roles:
+          type: array
+          items:
+            type: string
+        driverCapabilityStatus:
+          type: string
+          enum: [unverified, not_applied, draft, pending_review, approved, partial_suspended, rejected]
+        cityCode:
+          type: string
+    DriverAccessApplicationRequest:
+      type: object
+      required: [baseInfo, submit]
+      properties:
+        submit:
+          type: boolean
+        baseInfo:
+          type: object
+          properties:
+            realName:
+              type: string
+            mobile:
+              type: string
+            idCardNo:
+              type: string
+        licenses:
+          type: array
+          items:
+            type: object
+        vehicleInfo:
+          type: object
+        settlementInfo:
+          type: object
+    DriverAccessApplicationResponse:
+      type: object
+      properties:
+        applicationId:
+          type: string
+        status:
+          type: string
+        missingFields:
+          type: array
+          items:
+            type: string
+    DriverAccessStatusResponse:
+      type: object
+      properties:
+        applicationId:
+          type: string
+        status:
+          type: string
+        rejectReasons:
+          type: array
+          items:
+            type: string
+        reviewTimeline:
+          type: array
+          items:
+            type: object
+    DriverDashboardResponse:
+      type: object
+      properties:
+        capabilityStatus:
+          type: string
+        incomeSummary:
+          type: object
+          properties:
+            pendingIncome:
+              type: number
+            availableBalance:
+              type: number
+            couponValue:
+              type: number
+            negativeBalanceFlag:
+              type: boolean
+        distributionSummary:
+          type: object
+          properties:
+            todayScans:
+              type: integer
+            todayPaidOrders:
+              type: integer
+            cumulativeSales:
+              type: number
+        driverZoneSummary:
+          type: object
+          properties:
+            availableCategories:
+              type: integer
+            latestOrderStatus:
+              type: string
+        todoList:
+          type: array
+          items:
+            type: object
+    QRCodeCreateRequest:
+      type: object
+      required: [scene]
+      properties:
+        scene:
+          type: string
+          enum: [mall, driver-zone, ride, campaign]
+        productId:
+          type: string
+        campaignId:
+          type: string
+        posterTemplateId:
+          type: string
+    QRCodeCreateResponse:
+      type: object
+      properties:
+        qrCodeId:
+          type: string
+        shortLink:
+          type: string
+        posterUrl:
+          type: string
+        status:
+          type: string
+    QRCodeListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              qrCodeId:
+                type: string
+              scene:
+                type: string
+              status:
+                type: string
+              posterUrl:
+                type: string
+              createdAt:
+                type: string
+                format: date-time
+        total:
+          type: integer
+        templateVersion:
+          type: string
+    AttributedOrderListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              orderId:
+                type: string
+              businessType:
+                type: string
+              payStatus:
+                type: string
+              orderAmount:
+                type: number
+              commissionStatus:
+                type: string
+        summary:
+          type: object
+        attributionWindow:
+          type: object
+    FinanceSummaryResponse:
+      type: object
+      properties:
+        pendingIncome:
+          type: number
+        availableBalance:
+          type: number
+        couponValue:
+          type: number
+        negativeBalanceFlag:
+          type: boolean
+        negativeBalanceAmount:
+          type: number
+    LedgerListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              entryId:
+                type: string
+              ledgerType:
+                type: string
+              direction:
+                type: string
+                enum: [in, out]
+              amount:
+                type: number
+              sourceType:
+                type: string
+              sourceId:
+                type: string
+              createdAt:
+                type: string
+                format: date-time
+        total:
+          type: integer
+    CouponListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              couponId:
+                type: string
+              status:
+                type: string
+              faceValue:
+                type: number
+              fulfillmentTypes:
+                type: array
+                items:
+                  type: string
+              expiresAt:
+                type: string
+                format: date-time
+        expiringSoonCount:
+          type: integer
+    ProductListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              productId:
+                type: string
+              title:
+                type: string
+              price:
+                type: number
+              fulfillmentType:
+                type: string
+                enum: [in_store_verify, pickup, delivery]
+              categoryName:
+                type: string
+        total:
+          type: integer
+    ProductDetailResponse:
+      type: object
+      properties:
+        productId:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        price:
+          type: number
+        fulfillmentType:
+          type: string
+        stockStatus:
+          type: string
+        couponEligibility:
+          type: array
+          items:
+            type: string
+    DriverZoneOrderCreateRequest:
+      type: object
+      required: [scene, items, deliveryInfo]
+      properties:
+        scene:
+          type: string
+          enum: [driver-zone]
+        couponIds:
+          type: array
+          items:
+            type: string
+        walletAmount:
+          type: number
+        deliveryInfo:
+          type: object
+          properties:
+            fulfillmentType:
+              type: string
+              enum: [in_store_verify, pickup, delivery]
+            storeId:
+              type: string
+            contactName:
+              type: string
+            contactPhone:
+              type: string
+            addressText:
+              type: string
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              skuId:
+                type: string
+              quantity:
+                type: integer
+    MallOrderResponse:
+      type: object
+      properties:
+        orderId:
+          type: string
+        orderStatus:
+          type: string
+        deductionSummary:
+          type: object
+    MallOrderListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              orderId:
+                type: string
+              orderStatus:
+                type: string
+              fulfillmentType:
+                type: string
+              amount:
+                type: number
+        total:
+          type: integer
+    MallOrderDetailResponse:
+      type: object
+      properties:
+        orderId:
+          type: string
+        orderStatus:
+          type: string
+        fulfillmentInfo:
+          type: object
+        refundInfo:
+          type: object
+        ledgerRefs:
+          type: array
+          items:
+            type: string
+    MessageListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              messageId:
+                type: string
+              messageType:
+                type: string
+              title:
+                type: string
+              read:
+                type: boolean
+              sentAt:
+                type: string
+                format: date-time
+        unreadCount:
+          type: integer
+    SupportTicketCreateRequest:
+      type: object
+      required: [bizType, bizId, ticketType, description]
+      properties:
+        bizType:
+          type: string
+          enum: [mall-order, wallet-entry, coupon-record]
+        bizId:
+          type: string
+        ticketType:
+          type: string
+          enum: [after_sale, appeal, consultation]
+        description:
+          type: string
+        attachments:
+          type: array
+          items:
+            type: string
+    SupportTicketResponse:
+      type: object
+      properties:
+        ticketId:
+          type: string
+        status:
+          type: string
+    SupportTicketListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+        total:
+          type: integer
+    SupportTicketDetailResponse:
+      type: object
+      properties:
+        ticket:
+          type: object
+        timeline:
+          type: array
+          items:
+            type: object

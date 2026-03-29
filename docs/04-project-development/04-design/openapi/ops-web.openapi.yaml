@@ -1,0 +1,920 @@
+openapi: 3.1.0
+info:
+  title: ride-loop Ops Web API
+  version: 1.0.0-draft
+  summary: 千乘坊运营 Web 接口契约
+  description: |
+    设计阶段接口合同。用于运营后台、客服、财务、风控和管理员前端联调。
+servers:
+  - url: https://api.ride-loop.local
+tags:
+  - name: Auth
+  - name: Dashboard
+  - name: DriverReview
+  - name: MallAdmin
+  - name: DistributionRules
+  - name: CommissionRules
+  - name: OrderCenter
+  - name: DispatchOps
+  - name: Finance
+  - name: Support
+  - name: Risk
+  - name: Analytics
+  - name: RBAC
+security:
+  - bearerAuth: []
+paths:
+  /api/v1/auth/session:
+    post:
+      tags: [Auth]
+      operationId: createOpsSession
+      summary: 创建后台会话
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [clientType]
+              properties:
+                clientType:
+                  type: string
+                  enum: [ops-web]
+                account:
+                  type: string
+                password:
+                  type: string
+                ssoTicket:
+                  type: string
+      responses:
+        '200':
+          description: 登录成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionResponse'
+  /api/v1/admin/dashboard:
+    get:
+      tags: [Dashboard]
+      operationId: getOpsDashboard
+      summary: 查询后台首页总览
+      parameters:
+        - in: query
+          name: cityCode
+          schema:
+            type: string
+        - in: query
+          name: date
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: 总览数据
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardResponse'
+  /api/v1/admin/drivers/reviews:
+    get:
+      tags: [DriverReview]
+      operationId: listDriverReviews
+      summary: 查询司机审核列表
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+        - in: query
+          name: cityCode
+          schema:
+            type: string
+        - $ref: '#/components/parameters/PageNo'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: 审核列表
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DriverReviewListResponse'
+  /api/v1/admin/drivers/{driverId}/review:
+    post:
+      tags: [DriverReview]
+      operationId: reviewDriver
+      summary: 审核司机或调整能力
+      parameters:
+        - $ref: '#/components/parameters/DriverId'
+        - $ref: '#/components/parameters/OperatorId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DriverReviewActionRequest'
+      responses:
+        '200':
+          description: 操作成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DriverReviewActionResponse'
+  /api/v1/admin/mall/products:
+    get:
+      tags: [MallAdmin]
+      operationId: listAdminProducts
+      summary: 查询商品列表
+      parameters:
+        - in: query
+          name: scene
+          schema:
+            type: string
+            enum: [mall, driver-zone]
+        - in: query
+          name: status
+          schema:
+            type: string
+        - $ref: '#/components/parameters/PageNo'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: 商品列表
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminProductListResponse'
+    post:
+      tags: [MallAdmin]
+      operationId: saveAdminProduct
+      summary: 保存、发布或下线商品
+      parameters:
+        - $ref: '#/components/parameters/OperatorId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminProductSaveRequest'
+      responses:
+        '200':
+          description: 保存成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminProductSaveResponse'
+  /api/v1/admin/distribution/rules:
+    get:
+      tags: [DistributionRules]
+      operationId: listDistributionRules
+      summary: 查询归因规则
+      parameters:
+        - in: query
+          name: ruleType
+          schema:
+            type: string
+        - in: query
+          name: cityCode
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 规则列表
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RuleListResponse'
+    post:
+      tags: [DistributionRules]
+      operationId: saveDistributionRules
+      summary: 保存归因规则
+      parameters:
+        - $ref: '#/components/parameters/OperatorId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RuleSaveRequest'
+      responses:
+        '200':
+          description: 保存成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RuleSaveResponse'
+  /api/v1/admin/finance/commission-rules:
+    get:
+      tags: [CommissionRules]
+      operationId: listCommissionRules
+      summary: 查询佣金规则
+      parameters:
+        - in: query
+          name: cityCode
+          schema:
+            type: string
+        - in: query
+          name: businessType
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 规则列表
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RuleListResponse'
+    post:
+      tags: [CommissionRules]
+      operationId: saveCommissionRules
+      summary: 保存佣金规则
+      parameters:
+        - $ref: '#/components/parameters/OperatorId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RuleSaveRequest'
+      responses:
+        '200':
+          description: 保存成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RuleSaveResponse'
+  /api/v1/admin/orders/mall:
+    get:
+      tags: [OrderCenter]
+      operationId: listAdminMallOrders
+      summary: 查询商城订单
+      parameters:
+        - in: query
+          name: orderStatus
+          schema:
+            type: string
+        - in: query
+          name: refundStatus
+          schema:
+            type: string
+        - in: query
+          name: keyword
+          schema:
+            type: string
+        - $ref: '#/components/parameters/PageNo'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: 商城订单列表
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderListResponse'
+  /api/v1/admin/orders/ride:
+    get:
+      tags: [OrderCenter]
+      operationId: listAdminRideOrders
+      summary: 查询出行订单
+      parameters:
+        - in: query
+          name: orderStatus
+          schema:
+            type: string
+        - in: query
+          name: dispatchStatus
+          schema:
+            type: string
+        - in: query
+          name: keyword
+          schema:
+            type: string
+        - $ref: '#/components/parameters/PageNo'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: 出行订单列表
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderListResponse'
+  /api/v1/admin/dispatch/monitor:
+    get:
+      tags: [DispatchOps]
+      operationId: getDispatchMonitor
+      summary: 查询派单监控
+      parameters:
+        - in: query
+          name: regionCode
+          schema:
+            type: string
+        - in: query
+          name: timeWindow
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 派单监控数据
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DispatchMonitorResponse'
+  /api/v1/admin/dispatch/interventions:
+    post:
+      tags: [DispatchOps]
+      operationId: createDispatchIntervention
+      summary: 提交人工干预
+      parameters:
+        - $ref: '#/components/parameters/OperatorId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DispatchInterventionRequest'
+      responses:
+        '200':
+          description: 干预成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DispatchInterventionResponse'
+  /api/v1/admin/finance/ledger:
+    get:
+      tags: [Finance]
+      operationId: listFinanceLedger
+      summary: 查询台账与余额
+      parameters:
+        - in: query
+          name: ledgerType
+          schema:
+            type: string
+        - in: query
+          name: driverId
+          schema:
+            type: string
+        - $ref: '#/components/parameters/PageNo'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: 台账与余额
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinanceLedgerResponse'
+  /api/v1/admin/finance/refunds:
+    get:
+      tags: [Finance]
+      operationId: listRefundCases
+      summary: 查询退款与对账异常
+      parameters:
+        - in: query
+          name: refundStatus
+          schema:
+            type: string
+        - in: query
+          name: bizType
+          schema:
+            type: string
+        - $ref: '#/components/parameters/PageNo'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: 退款列表
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RefundListResponse'
+  /api/v1/admin/finance/refunds/{refundId}/actions:
+    post:
+      tags: [Finance]
+      operationId: actOnRefund
+      summary: 处理退款
+      parameters:
+        - $ref: '#/components/parameters/RefundId'
+        - $ref: '#/components/parameters/OperatorId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefundActionRequest'
+      responses:
+        '200':
+          description: 退款处理成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RefundActionResponse'
+  /api/v1/admin/support/tickets:
+    get:
+      tags: [Support]
+      operationId: listAdminSupportTickets
+      summary: 查询工单列表
+      parameters:
+        - in: query
+          name: ticketStatus
+          schema:
+            type: string
+        - in: query
+          name: bizType
+          schema:
+            type: string
+        - in: query
+          name: assigneeId
+          schema:
+            type: string
+        - $ref: '#/components/parameters/PageNo'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: 工单列表
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupportTicketListResponse'
+  /api/v1/admin/support/tickets/{ticketId}/actions:
+    post:
+      tags: [Support]
+      operationId: actOnAdminSupportTicket
+      summary: 处理工单
+      parameters:
+        - $ref: '#/components/parameters/TicketId'
+        - $ref: '#/components/parameters/OperatorId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SupportTicketActionRequest'
+      responses:
+        '200':
+          description: 工单处理成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupportTicketActionResponse'
+  /api/v1/admin/risk/events:
+    get:
+      tags: [Risk]
+      operationId: listRiskEvents
+      summary: 查询风险事件
+      parameters:
+        - in: query
+          name: riskLevel
+          schema:
+            type: string
+        - in: query
+          name: eventType
+          schema:
+            type: string
+        - $ref: '#/components/parameters/PageNo'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: 风险事件列表
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RiskEventListResponse'
+  /api/v1/admin/audit/logs:
+    get:
+      tags: [Risk]
+      operationId: listAuditLogs
+      summary: 查询审计日志
+      parameters:
+        - in: query
+          name: operatorId
+          schema:
+            type: string
+        - in: query
+          name: actionType
+          schema:
+            type: string
+        - in: query
+          name: bizObject
+          schema:
+            type: string
+        - $ref: '#/components/parameters/PageNo'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: 审计日志
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuditLogListResponse'
+  /api/v1/admin/analytics/business:
+    get:
+      tags: [Analytics]
+      operationId: getBusinessAnalytics
+      summary: 查询经营看板
+      parameters:
+        - in: query
+          name: metricSet
+          schema:
+            type: string
+        - in: query
+          name: dateRange
+          schema:
+            type: string
+        - in: query
+          name: granularity
+          schema:
+            type: string
+            enum: [hour, day]
+      responses:
+        '200':
+          description: 经营指标
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnalyticsResponse'
+  /api/v1/admin/settings/rbac:
+    get:
+      tags: [RBAC]
+      operationId: getRbacSettings
+      summary: 查询角色与权限
+      parameters:
+        - in: query
+          name: roleId
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 角色与权限
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RbacResponse'
+    post:
+      tags: [RBAC]
+      operationId: saveRbacSettings
+      summary: 保存角色与权限
+      parameters:
+        - $ref: '#/components/parameters/OperatorId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RbacSaveRequest'
+      responses:
+        '200':
+          description: 保存成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RbacSaveResponse'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    DriverId:
+      in: path
+      name: driverId
+      required: true
+      schema:
+        type: string
+    RefundId:
+      in: path
+      name: refundId
+      required: true
+      schema:
+        type: string
+    TicketId:
+      in: path
+      name: ticketId
+      required: true
+      schema:
+        type: string
+    OperatorId:
+      in: header
+      name: X-Operator-Id
+      required: true
+      schema:
+        type: string
+    PageNo:
+      in: query
+      name: pageNo
+      schema:
+        type: integer
+        default: 1
+    PageSize:
+      in: query
+      name: pageSize
+      schema:
+        type: integer
+        default: 20
+  schemas:
+    SessionResponse:
+      type: object
+      properties:
+        sessionToken:
+          type: string
+        userId:
+          type: string
+        roles:
+          type: array
+          items:
+            type: string
+    DashboardResponse:
+      type: object
+      properties:
+        kpis:
+          type: array
+          items:
+            type: object
+        alerts:
+          type: array
+          items:
+            type: object
+        todoList:
+          type: array
+          items:
+            type: object
+    DriverReviewListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              driverId:
+                type: string
+              status:
+                type: string
+              realName:
+                type: string
+              cityCode:
+                type: string
+              submittedAt:
+                type: string
+                format: date-time
+        total:
+          type: integer
+    DriverReviewActionRequest:
+      type: object
+      required: [action, reason]
+      properties:
+        action:
+          type: string
+          enum: [approve, reject, suspend, resume]
+        reason:
+          type: string
+        capabilities:
+          type: array
+          items:
+            type: string
+    DriverReviewActionResponse:
+      type: object
+      properties:
+        driverStatus:
+          type: string
+        effectiveCapabilities:
+          type: array
+          items:
+            type: string
+    AdminProductListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+        total:
+          type: integer
+        categoryTree:
+          type: array
+          items:
+            type: object
+    AdminProductSaveRequest:
+      type: object
+      required: [action, productDraft, reason]
+      properties:
+        action:
+          type: string
+          enum: [save, publish, offline]
+        reason:
+          type: string
+        productDraft:
+          type: object
+    AdminProductSaveResponse:
+      type: object
+      properties:
+        productId:
+          type: string
+        status:
+          type: string
+        publishedAt:
+          type: string
+          format: date-time
+    RuleListResponse:
+      type: object
+      properties:
+        rules:
+          type: array
+          items:
+            type: object
+        effectiveVersion:
+          type: string
+    RuleSaveRequest:
+      type: object
+      required: [ruleSet, changeReason]
+      properties:
+        changeReason:
+          type: string
+        publishAt:
+          type: string
+          format: date-time
+        ruleSet:
+          type: object
+    RuleSaveResponse:
+      type: object
+      properties:
+        version:
+          type: string
+        status:
+          type: string
+    OrderListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+        total:
+          type: integer
+    DispatchMonitorResponse:
+      type: object
+      properties:
+        onlineDrivers:
+          type: integer
+        dispatchingOrders:
+          type: integer
+        failedOrders:
+          type: integer
+        heatmap:
+          type: array
+          items:
+            type: object
+    DispatchInterventionRequest:
+      type: object
+      required: [orderId, interventionType, reason]
+      properties:
+        orderId:
+          type: string
+        interventionType:
+          type: string
+          enum: [assign_driver, cancel_order, suspend_region, resume_region]
+        targetDriverId:
+          type: string
+        reason:
+          type: string
+    DispatchInterventionResponse:
+      type: object
+      properties:
+        result:
+          type: string
+        orderStatus:
+          type: string
+        dispatchTrace:
+          type: array
+          items:
+            type: object
+    FinanceLedgerResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+        balanceSummary:
+          type: object
+        negativeDrivers:
+          type: array
+          items:
+            type: object
+    RefundListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+        total:
+          type: integer
+        pendingAmount:
+          type: number
+    RefundActionRequest:
+      type: object
+      required: [action, reason]
+      properties:
+        action:
+          type: string
+          enum: [approve, reject, manualAdjust]
+        amount:
+          type: number
+        reason:
+          type: string
+    RefundActionResponse:
+      type: object
+      properties:
+        refundStatus:
+          type: string
+        ledgerRefs:
+          type: array
+          items:
+            type: string
+    SupportTicketListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+        total:
+          type: integer
+    SupportTicketActionRequest:
+      type: object
+      required: [action, reason]
+      properties:
+        action:
+          type: string
+          enum: [accept, transfer, resolve, reopen]
+        targetRole:
+          type: string
+        reason:
+          type: string
+    SupportTicketActionResponse:
+      type: object
+      properties:
+        ticketStatus:
+          type: string
+        timeline:
+          type: array
+          items:
+            type: object
+    RiskEventListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+    AuditLogListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+        traceId:
+          type: string
+    AnalyticsResponse:
+      type: object
+      properties:
+        charts:
+          type: array
+          items:
+            type: object
+        summary:
+          type: object
+        compareMetrics:
+          type: object
+    RbacResponse:
+      type: object
+      properties:
+        roles:
+          type: array
+          items:
+            type: object
+        permissions:
+          type: array
+          items:
+            type: object
+        bindings:
+          type: array
+          items:
+            type: object
+    RbacSaveRequest:
+      type: object
+      required: [action, reason, payload]
+      properties:
+        action:
+          type: string
+          enum: [createRole, updateRole, bindUser, updatePermission]
+        reason:
+          type: string
+        payload:
+          type: object
+    RbacSaveResponse:
+      type: object
+      properties:
+        roleStatus:
+          type: string
+        version:
+          type: string
