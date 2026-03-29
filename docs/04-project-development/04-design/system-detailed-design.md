@@ -6,7 +6,7 @@
 **主要读者：** 架构 | 后端 | 前端 | QA | 运维  
 **上游输入：** 系统架构 | 模块边界 | 接口与契约设计 | 三端规格文档  
 **下游输出：** 服务骨架任务拆分 | OpenAPI 契约 | 数据库设计 | 测试用例  
-**关联 ID：** `MOD-001` - `MOD-012`, `REQ-001` - `REQ-017`, `API-001` - `API-066`  
+**关联 ID：** `MOD-001` - `MOD-012`, `REQ-001` - `REQ-018`, `API-001` - `API-071`  
 **最后更新：** 2026-03-29  
 
 ## 1. 详细设计目标
@@ -25,6 +25,7 @@
 | `SYS-DEC-004` | 司机重端 Android 优先，唯一负责接单与行程推进 | `MOD-001`, `MOD-006`, `MOD-008` |
 | `SYS-DEC-005` | 返现仅站内循环，不支持提现；退款允许形成负余额并由后续佣金优先冲抵 | `MOD-005`, `MOD-007`, `MOD-010`, `MOD-011` |
 | `SYS-DEC-006` | 运营后台按菜单级 + 动作级权限设计，高风险操作必须审计 | `MOD-007`, `MOD-011` |
+| `SYS-DEC-007` | 返现券支持司机间定向转赠，但仅对可转赠券开放，单券最多成功转赠一次 | `MOD-005`, `MOD-009`, `MOD-011` |
 
 ## 3. 核心业务时序
 
@@ -88,6 +89,32 @@ sequenceDiagram
         F->>F: 写入负余额状态
     end
     F->>M: 发送退款/冲抵通知
+```
+
+### 3.4 司机返现券转赠时序
+
+```mermaid
+sequenceDiagram
+    participant S as Sender Driver Light
+    participant G as gateway-api
+    participant F as finance
+    participant M as message-center
+    participant R as Receiver Driver Light
+    S->>G: 发起券转赠(微信/手机号)
+    G->>F: 校验券可转赠并创建转赠记录
+    F->>F: 锁定券并写审计
+    alt 手机号定向转赠
+        F->>M: 发送领取通知给目标司机
+    else 微信分享转赠
+        F-->>S: 返回领取链接/转赠卡片
+    end
+    R->>G: 打开领取页预览转赠券
+    G->>F: 查询转赠详情与领取资格
+    F-->>R: 返回转赠券摘要/过期时间/发送方信息
+    R->>G: 领取转赠券
+    G->>F: 校验司机资格并完成领取
+    F->>F: 更新券当前持有人
+    F->>M: 通知发送方和接收方
 ```
 
 ## 4. 资金状态图
@@ -170,14 +197,14 @@ stateDiagram-v2
 
 | 项 | 设计 |
 |---|---|
-| 模块职责 | 返佣、钱包、返现券、退款逆向台账、负余额冲抵 |
-| 核心聚合 | `WalletAccount`, `WalletEntry`, `CommissionRule`, `CommissionLedger`, `CouponTemplate`, `CouponRecord` |
-| 关键命令 | 生成佣金、钱包入账、券发放、券核销、退款冲销、负余额冲抵 |
-| 关键查询 | 收益摘要、台账明细、可用券、负余额司机、冲销记录 |
-| 关键状态 | 佣金：`pending/posted/reversed`; 券：`issued/active/used/expired/reversed`; 钱包：`normal/negative/recovering` |
+| 模块职责 | 返佣、钱包、返现券、券转赠、退款逆向台账、负余额冲抵 |
+| 核心聚合 | `WalletAccount`, `WalletEntry`, `CommissionRule`, `CommissionLedger`, `CouponTemplate`, `CouponRecord`, `CouponTransferRecord` |
+| 关键命令 | 生成佣金、钱包入账、券发放、发起转赠、领取转赠、取消转赠、券核销、退款冲销、负余额冲抵 |
+| 关键查询 | 收益摘要、台账明细、可用券、转赠记录、负余额司机、冲销记录 |
+| 关键状态 | 佣金：`pending/posted/reversed`; 券：`issued/active/locked_transfer/used/expired/reversed`; 转赠：`pending_claim/claimed/cancelled/expired`; 钱包：`normal/negative/recovering` |
 | 入站依赖 | `MOD-003`, `MOD-004`, `MOD-007`, 支付/退款回调 |
 | 出站依赖 | `MOD-009`, `MOD-010`, `MOD-011`, `MOD-012` |
-| 关键规则 | 不支持提现；退款优先生成逆向分录；负余额由后续佣金自动冲抵 |
+| 关键规则 | 不支持提现；退款优先生成逆向分录；负余额由后续佣金自动冲抵；仅可转赠券允许转赠，且当前持有人始终以 `coupon_record.driver_id` 为准 |
 | 降级策略 | 资金写入失败时保留待处理任务，不提前对司机展示成功结果 |
 
 ### 5.6 `MOD-006 dispatch-engine`
@@ -284,6 +311,7 @@ stateDiagram-v2
 - 出行订单和商城订单都允许带归因会话，但归因只影响分销收益，不改变履约责任。
 - 司机履约收益与引流收益可分离；如果履约司机与引流司机同一人，则在资金层合并结算。
 - 退款只做逆向分录，不直接覆盖原订单和原资金记录。
+- 券处于 `locked_transfer` 时不得参与司机专区抵扣；取消或超时后才恢复到原发送司机名下可用。
 - 后台审核、退款、派单干预、权限变更全部进入审计日志。
 
 ## 7. 实施前必须保持的边界
@@ -299,3 +327,4 @@ stateDiagram-v2
 |---|---|---|
 | 2026-03-29 | 初始版本 | AI 软件工厂 |
 | 2026-03-29 | 补充 12 个模块的详细设计、核心时序与资金状态图 | AI 软件工厂 |
+| 2026-03-29 | 补充 `REQ-018` 券转赠时序与资金模块设计 | AI 软件工厂 |

@@ -223,7 +223,7 @@ paths:
           name: couponStatus
           schema:
             type: string
-            enum: [active, used, expired, reversed]
+            enum: [active, locked_transfer, used, expired, reversed]
         - $ref: '#/components/parameters/PageNo'
         - $ref: '#/components/parameters/PageSize'
       responses:
@@ -233,6 +233,112 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CouponListResponse'
+  /api/v1/driver/finance/coupons/{couponId}/transfers:
+    post:
+      tags: [Finance]
+      operationId: createCouponTransfer
+      summary: 发起返现券转赠
+      parameters:
+        - $ref: '#/components/parameters/CouponId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CouponTransferCreateRequest'
+      responses:
+        '200':
+          description: 转赠创建成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CouponTransferResponse'
+  /api/v1/driver/finance/coupon-transfers:
+    get:
+      tags: [Finance]
+      operationId: listCouponTransfers
+      summary: 查询券转赠记录
+      parameters:
+        - in: query
+          name: transferDirection
+          schema:
+            type: string
+            enum: [sent, received, all]
+        - in: query
+          name: transferStatus
+          schema:
+            type: string
+            enum: [pending_claim, claimed, cancelled, expired, all]
+        - $ref: '#/components/parameters/PageNo'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: 转赠记录列表
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CouponTransferListResponse'
+  /api/v1/driver/finance/coupon-transfers/{transferId}:
+    get:
+      tags: [Finance]
+      operationId: getCouponTransferDetail
+      summary: 查询转赠详情与领取预览
+      parameters:
+        - $ref: '#/components/parameters/TransferId'
+        - in: query
+          name: claimToken
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 转赠详情
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CouponTransferDetailResponse'
+  /api/v1/driver/finance/coupon-transfers/{transferId}/claim:
+    post:
+      tags: [Finance]
+      operationId: claimCouponTransfer
+      summary: 领取转赠券
+      parameters:
+        - $ref: '#/components/parameters/TransferId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CouponTransferClaimRequest'
+      responses:
+        '200':
+          description: 领取成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CouponTransferResponse'
+  /api/v1/driver/finance/coupon-transfers/{transferId}/cancel:
+    post:
+      tags: [Finance]
+      operationId: cancelCouponTransfer
+      summary: 取消券转赠
+      parameters:
+        - $ref: '#/components/parameters/TransferId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CouponTransferCancelRequest'
+      responses:
+        '200':
+          description: 取消成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CouponTransferResponse'
   /api/v1/mall/products:
     get:
       tags: [DriverZone]
@@ -353,7 +459,7 @@ paths:
           name: messageType
           schema:
             type: string
-            enum: [audit, income, campaign, support]
+            enum: [audit, income, campaign, support, coupon_transfer]
         - $ref: '#/components/parameters/PageNo'
         - $ref: '#/components/parameters/PageSize'
       responses:
@@ -422,6 +528,12 @@ components:
       scheme: bearer
       bearerFormat: JWT
   parameters:
+    CouponId:
+      in: path
+      name: couponId
+      required: true
+      schema:
+        type: string
     ProductId:
       in: path
       name: productId
@@ -437,6 +549,12 @@ components:
     TicketId:
       in: path
       name: ticketId
+      required: true
+      schema:
+        type: string
+    TransferId:
+      in: path
+      name: transferId
       required: true
       schema:
         type: string
@@ -691,6 +809,16 @@ components:
                 type: string
               faceValue:
                 type: number
+              transferable:
+                type: boolean
+              transferStatus:
+                type: string
+                enum: [none, pending_claim, claimed, cancelled, expired]
+              transferAvailableAt:
+                type: string
+                format: date-time
+              transferCount:
+                type: integer
               fulfillmentTypes:
                 type: array
                 items:
@@ -700,6 +828,121 @@ components:
                 format: date-time
         expiringSoonCount:
           type: integer
+    CouponTransferCreateRequest:
+      type: object
+      required: [transferMethod]
+      properties:
+        transferMethod:
+          type: string
+          enum: [wechat, mobile]
+        recipientMobile:
+          type: string
+        shareMessage:
+          type: string
+    CouponTransferClaimRequest:
+      type: object
+      required: [claimToken]
+      properties:
+        claimToken:
+          type: string
+    CouponTransferCancelRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+    CouponTransferResponse:
+      type: object
+      properties:
+        transferId:
+          type: string
+        couponId:
+          type: string
+        transferStatus:
+          type: string
+          enum: [pending_claim, claimed, cancelled, expired]
+        recipientDriverId:
+          type: string
+        shareLink:
+          type: string
+        lockExpiresAt:
+          type: string
+          format: date-time
+    CouponTransferListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              transferId:
+                type: string
+              couponId:
+                type: string
+              transferDirection:
+                type: string
+                enum: [sent, received]
+              transferStatus:
+                type: string
+                enum: [pending_claim, claimed, cancelled, expired]
+              transferMethod:
+                type: string
+                enum: [wechat, mobile]
+              senderDriverId:
+                type: string
+              recipientDriverId:
+                type: string
+              recipientMobileMasked:
+                type: string
+              lockExpiresAt:
+                type: string
+                format: date-time
+              claimedAt:
+                type: string
+                format: date-time
+        total:
+          type: integer
+    CouponTransferDetailResponse:
+      type: object
+      properties:
+        transfer:
+          type: object
+          properties:
+            transferId:
+              type: string
+            transferStatus:
+              type: string
+              enum: [pending_claim, claimed, cancelled, expired]
+            transferMethod:
+              type: string
+              enum: [wechat, mobile]
+            senderDriverId:
+              type: string
+            senderDriverName:
+              type: string
+            recipientDriverId:
+              type: string
+            recipientMobileMasked:
+              type: string
+            lockExpiresAt:
+              type: string
+              format: date-time
+        couponSummary:
+          type: object
+          properties:
+            couponId:
+              type: string
+            faceValue:
+              type: number
+            fulfillmentTypes:
+              type: array
+              items:
+                type: string
+            expiresAt:
+              type: string
+              format: date-time
+        claimable:
+          type: boolean
     ProductListResponse:
       type: object
       properties:
@@ -845,7 +1088,7 @@ components:
       properties:
         bizType:
           type: string
-          enum: [mall-order, wallet-entry, coupon-record]
+          enum: [mall-order, wallet-entry, coupon-record, coupon-transfer]
         bizId:
           type: string
         ticketType:

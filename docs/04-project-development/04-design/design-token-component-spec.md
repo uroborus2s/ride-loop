@@ -238,8 +238,8 @@
 
 - 变量库：颜色、字体、间距、圆角、阴影。
 - 组件库：按钮、卡片、列表项、时间线、表格、弹窗、状态标签。
-- 页面稿：按 [页面级详细设计矩阵](/Users/uroborus/NodeProject/ride-loop/docs/04-project-development/04-design/ui-page-detail-matrix.md) 输出。
-- 审稿清单：按 [设计软件提示词包](/Users/uroborus/NodeProject/ride-loop/docs/04-project-development/04-design/design-tool-prompt-pack.md) 和逐页提示词执行回查。
+- 页面稿：按 [页面级详细设计矩阵](./ui-page-detail-matrix.md) 输出。
+- 审稿清单：按 [设计软件提示词包](./design-tool-prompt-pack.md) 和逐页提示词执行回查。
 
 ## 10. 变更记录
 

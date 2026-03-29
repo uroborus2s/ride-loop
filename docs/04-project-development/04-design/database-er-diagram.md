@@ -206,6 +206,7 @@ erDiagram
     commission_rule ||--o{ commission_ledger : applies
     wallet_account ||--o{ wallet_entry : has
     coupon_template ||--o{ coupon_record : issues
+    coupon_record ||--o{ coupon_transfer_record : transfers
     commission_ledger ||--o{ wallet_entry : settles
     refund_record ||--o{ wallet_entry : reverses
     support_ticket ||--o{ support_ticket_timeline : logs
@@ -254,8 +255,19 @@ erDiagram
       uuid coupon_record_id PK
       uuid coupon_template_id FK
       uuid driver_id FK
+      uuid original_driver_id FK
       string coupon_status
+      string transfer_status
       datetime expires_at
+    }
+    coupon_transfer_record {
+      uuid coupon_transfer_id PK
+      uuid coupon_record_id FK
+      uuid sender_driver_id FK
+      uuid recipient_driver_id FK
+      string transfer_method
+      string transfer_status
+      datetime lock_expires_at
     }
     refund_record {
       uuid refund_record_id PK
@@ -379,3 +391,4 @@ erDiagram
 |---|---|---|
 | 2026-03-29 | 初始版本 | AI 软件工厂 |
 | 2026-03-29 | 补充多域 ER 图与跨域关系 | AI 软件工厂 |
+| 2026-03-29 | 补充返现券转赠实体与资金域关系 | AI 软件工厂 |

@@ -5,4 +5,4 @@
 推荐阅读顺序：
 
 1. `deployment-guide.md`
-
+2. `external-services-register.md`

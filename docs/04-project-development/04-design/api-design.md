@@ -6,7 +6,7 @@
 **主要读者：** 架构 | 后端 | 前端 | 测试  
 **上游输入：** PRD | 系统架构 | 模块边界  
 **下游输出：** 实现接口契约 | 集成测试 | 联调用例  
-**关联 ID：** `API-001` - `API-066`, `REQ-001` - `REQ-017`  
+**关联 ID：** `API-001` - `API-071`, `REQ-001` - `REQ-018`  
 **最后更新：** 2026-03-29  
 
 ## 1. API 总体原则
@@ -24,7 +24,7 @@
 | 身份与会话 | 登录、用户信息、司机档案、角色查询 | 乘客、司机、后台 |
 | 商城与司机专区 | 商品列表、详情、下单、订单查询 | 乘客、司机轻端 |
 | 出行 | 预估价、创建叫车单、订单状态、取消 | 乘客 |
-| 司机轻端 | 入驻、二维码、收益、司机专区、工单 | 司机微信小程序 |
+| 司机轻端 | 入驻、二维码、收益、券转赠、司机专区、工单 | 司机微信小程序 |
 | 司机重端 | 设备绑定、在线状态、派单、行程推进 | 司机 App |
 | 后台 | 审核、规则、订单、派单、台账、退款、风控、RBAC | 运营 Web |
 
@@ -51,6 +51,11 @@
 | `API-025` | `GET` | `/api/v1/driver/finance/summary` | 收益、余额、券总览 |
 | `API-026` | `GET` | `/api/v1/driver/finance/ledger` | 收益台账明细 |
 | `API-027` | `GET` | `/api/v1/driver/finance/coupons` | 券与权益列表 |
+| `API-067` | `POST` | `/api/v1/driver/finance/coupons/{couponId}/transfers` | 发起返现券转赠 |
+| `API-068` | `POST` | `/api/v1/driver/finance/coupon-transfers/{transferId}/claim` | 领取转赠券 |
+| `API-069` | `POST` | `/api/v1/driver/finance/coupon-transfers/{transferId}/cancel` | 取消转赠 |
+| `API-070` | `GET` | `/api/v1/driver/finance/coupon-transfers` | 查询转赠记录 |
+| `API-071` | `GET` | `/api/v1/driver/finance/coupon-transfers/{transferId}` | 查询转赠详情/领取预览 |
 | `API-028` | `GET` | `/api/v1/driver/access/application` | 司机申请与审核状态 |
 | `API-029` | `GET` | `/api/v1/messages` | 通用消息中心 |
 | `API-030` | `POST` | `/api/v1/driver-app/session/bootstrap` | 司机重端启动初始化 |
@@ -120,7 +125,7 @@
 - 工作台：`API-021`
 - 分销二维码：`API-022`, `API-023`
 - 归因订单：`API-024`
-- 收益中心：`API-025`, `API-026`, `API-027`
+- 收益中心：`API-025`, `API-026`, `API-027`, `API-067`, `API-068`, `API-069`, `API-070`, `API-071`
 - 司机专区：`API-002`, `API-066`, `API-007`, `API-062`, `API-063`
 - 消息与工单：`API-029`, `API-018`, `API-064`, `API-065`
 
@@ -192,6 +197,40 @@
   - 只允许司机重端调用。
   - 非法状态迁移返回 `RIDE-409`。
 
+### 券转赠 `API-067` ~ `API-071`
+
+- 发起转赠 `API-067`
+  - 输入：`couponId`, `transferMethod`, `recipientMobile`, `shareMessage`
+  - 输出：`transferId`, `transferStatus`, `shareLink`, `lockExpiresAt`
+  - 约束：
+    - 仅 `active` 且 `transferable=true` 的券可发起。
+    - 同一张券只允许存在一条有效的待领取转赠记录。
+    - 手机号转赠要求目标手机号已绑定已开通司机能力的账户；微信转赠通过轻端分享领取链接完成。
+- 领取转赠 `API-068`
+  - 输入：`transferId`, `claimToken`
+  - 输出：`transferStatus`, `couponId`, `recipientDriverId`
+  - 约束：
+    - 接收方必须是平台司机。
+    - 领取成功后，券当前持有人立即切换为接收司机。
+- 取消转赠 `API-069`
+  - 输入：`transferId`, `reason`
+  - 输出：`transferStatus`, `couponStatus`
+  - 约束：
+    - 仅发送方可取消待领取转赠。
+    - 取消后券恢复为发送方可用状态。
+- 查询转赠记录 `API-070`
+  - 输入：`transferDirection`, `transferStatus`, `pageNo`, `pageSize`
+  - 输出：`items[]`, `total`
+  - 约束：
+    - 支持查看我发出的、我收到的和全部转赠记录。
+- 查询转赠详情/领取预览 `API-071`
+  - 输入：`transferId`, `claimToken`
+  - 输出：`transferId`, `transferStatus`, `couponSummary`, `senderDriver`, `recipientDriver`, `lockExpiresAt`, `claimable`
+  - 约束：
+    - 发送方查询本人记录时可不带 `claimToken`。
+    - 接收方从微信分享链接进入时必须带 `claimToken`，并在登录后校验是否具备司机能力。
+    - 已取消、已过期或已领取记录仍允许查看摘要，但必须明确不可领取。
+
 ### 商品管理 `API-052`
 
 - 输入：`productDraft`, `action`, `operatorId`, `reason`
@@ -238,6 +277,9 @@
 | `SUPPORT-409` | 工单状态冲突 | 重复关闭或重复处理 |
 | `DRIVER-423` | 司机能力受限 | 审核未通过或能力被暂停 |
 | `OPS-409` | 后台干预冲突 | 重复干预或状态已变化 |
+| `COUPON-404` | 转赠记录不存在 | 链接失效、记录不存在或无查看权限 |
+| `COUPON-409` | 券转赠状态冲突 | 已锁定、已使用、已过期或已被转赠 |
+| `COUPON-423` | 券转赠对象受限 | 目标账号不是有效司机或不满足领取条件 |
 | `RBAC-409` | 权限版本冲突 | 角色权限被其他管理员更新 |
 
 - 幂等键使用场景：
@@ -277,3 +319,4 @@
 | 2026-03-29 | 重构接口编号并补齐司机重端、消息、工单和看板接口 | AI 软件工厂 |
 | 2026-03-29 | 补充三类端的端级接口清单 | AI 软件工厂 |
 | 2026-03-29 | 补充后台商品、退款、RBAC 接口以及司机专区共享接口 | AI 软件工厂 |
+| 2026-03-29 | 补充 `API-067` - `API-071` 券转赠接口 | AI 软件工厂 |

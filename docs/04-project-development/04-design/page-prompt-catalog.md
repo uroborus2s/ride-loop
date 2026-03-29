@@ -10,9 +10,9 @@
 
 ## 1. 使用方式
 
-- 先把 [设计令牌与组件规范](/Users/uroborus/NodeProject/ride-loop/docs/04-project-development/04-design/design-token-component-spec.md) 提供给设计软件，生成整端视觉系统。
+- 先把 [设计令牌与组件规范](./design-token-component-spec.md) 提供给设计软件，生成整端视觉系统。
 - 再复制本页对应页面提示词，逐页生成高保真稿。
-- 生成后，用 [页面级详细设计矩阵](/Users/uroborus/NodeProject/ride-loop/docs/04-project-development/04-design/ui-page-detail-matrix.md) 回查字段、状态和主动作。
+- 生成后，用 [页面级详细设计矩阵](./ui-page-detail-matrix.md) 回查字段、状态和主动作。
 
 ## 2. 通用页级提示词骨架
 

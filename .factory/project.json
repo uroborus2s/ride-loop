@@ -34,6 +34,140 @@
       "document-templates",
       "stratix-nodejs-backend"
     ]
-  }
+  },
+  "stage": "PLAN",
+  "docs_profile": {
+    "project_kind": "application",
+    "audiences": [
+      "maintainer"
+    ],
+    "surfaces": {
+      "end_user_usage": true,
+      "public_api": false,
+      "sdk": false,
+      "plugin_extensibility": false,
+      "secondary_development": false,
+      "self_hosted": false
+    },
+    "modules": {
+      "01-getting-started": "required",
+      "02-user-guide": "required",
+      "03-developer-guide": "omit",
+      "04-project-development": "required"
+    },
+    "reasons": {}
+  },
+  "compressed_entry_docs": [
+    "/Users/uroborus/NodeProject/ride-loop/.factory/memory/runtime-brief.md",
+    "/Users/uroborus/NodeProject/ride-loop/.factory/memory/role-charter.project.md",
+    "/Users/uroborus/NodeProject/ride-loop/.factory/memory/doc-map.md"
+  ],
+  "last_project_compress_at": "2026-03-29 22:30:03",
+  "last_project_compress_owner": "项目协调者",
+  "stage_checks": [
+    {
+      "stage": "PLAN",
+      "result": "未通过",
+      "owner": "项目协调者",
+      "note": "半初始化项目规则补齐后阶段检查",
+      "checked_at": "2026-03-29 22:30:31"
+    },
+    {
+      "stage": "PLAN",
+      "result": "通过",
+      "owner": "项目协调者",
+      "note": "最小治理修复后复检",
+      "checked_at": "2026-03-29 22:40:45"
+    },
+    {
+      "stage": "PLAN",
+      "result": "通过",
+      "owner": "项目协调者",
+      "note": "报价与外部服务文档补充后复检",
+      "checked_at": "2026-03-29 22:54:43"
+    },
+    {
+      "stage": "PLAN",
+      "result": "通过",
+      "owner": "项目协调者",
+      "note": "报价说明文档补充后复检",
+      "checked_at": "2026-03-29 23:16:03"
+    },
+    {
+      "stage": "PLAN",
+      "result": "通过",
+      "owner": "项目协调者",
+      "note": "公开导航重编后复检",
+      "checked_at": "2026-03-29 23:39:41"
+    },
+    {
+      "stage": "PLAN",
+      "result": "通过",
+      "owner": "项目协调者",
+      "note": "发布策略文件补充后复检",
+      "checked_at": "2026-03-29 23:41:56"
+    },
+    {
+      "stage": "PLAN",
+      "result": "通过",
+      "owner": "项目协调者",
+      "note": "公开导航按项目发布策略重构后复检",
+      "checked_at": "2026-03-29 23:50:01"
+    }
+  ],
+  "last_stage_check_at": "2026-03-29 23:50:01",
+  "last_stage_check_result": "通过",
+  "last_state_doctor_at": "2026-03-29 23:41:50",
+  "last_state_doctor_result": "未通过",
+  "state_doctor_runs": [
+    {
+      "scope": "full",
+      "result": "未通过",
+      "owner": "项目医生",
+      "note": "半初始化项目补齐后诊断",
+      "checked_at": "2026-03-29 22:30:31"
+    },
+    {
+      "scope": "full",
+      "result": "关注",
+      "owner": "项目医生",
+      "note": "最小治理修复后复检",
+      "checked_at": "2026-03-29 22:40:45"
+    },
+    {
+      "scope": "full",
+      "result": "通过",
+      "owner": "项目医生",
+      "note": "报价与外部服务文档补充后复检",
+      "checked_at": "2026-03-29 22:54:43"
+    },
+    {
+      "scope": "full",
+      "result": "关注",
+      "owner": "项目医生",
+      "note": "报价说明文档补充后复检",
+      "checked_at": "2026-03-29 23:16:03"
+    },
+    {
+      "scope": "full",
+      "result": "通过",
+      "owner": "项目医生",
+      "note": "报价说明文档补充后顺序复检",
+      "checked_at": "2026-03-29 23:16:18"
+    },
+    {
+      "scope": "full",
+      "result": "未通过",
+      "owner": "项目医生",
+      "note": "公开导航重编后复检",
+      "checked_at": "2026-03-29 23:39:37"
+    },
+    {
+      "scope": "full",
+      "result": "未通过",
+      "owner": "项目医生",
+      "note": "发布策略文件补充后复检",
+      "checked_at": "2026-03-29 23:41:50"
+    }
+  ]
 }
-

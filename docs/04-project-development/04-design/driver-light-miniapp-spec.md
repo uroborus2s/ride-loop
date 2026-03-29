@@ -6,7 +6,7 @@
 **主要读者：** 产品 | 设计 | 小程序前端 | 后端 | 测试  
 **上游输入：** 端形态与渠道策略 | PRD | 接口与契约设计  
 **下游输出：** 小程序页面原型 | 页面分包设计 | 联调用例  
-**关联 ID：** `REQ-002`, `REQ-003`, `REQ-006`, `REQ-011`, `REQ-012`, `REQ-013`, `REQ-014`, `UI-DRV-L-001` - `UI-DRV-L-014`, `API-001`, `API-002`, `API-005`, `API-007`, `API-016`, `API-018`, `API-021` - `API-029`, `API-062` - `API-066`  
+**关联 ID：** `REQ-002`, `REQ-003`, `REQ-006`, `REQ-011`, `REQ-012`, `REQ-013`, `REQ-014`, `REQ-018`, `UI-DRV-L-001` - `UI-DRV-L-016`, `API-001`, `API-002`, `API-005`, `API-007`, `API-016`, `API-018`, `API-021` - `API-029`, `API-062` - `API-071`  
 **最后更新：** 2026-03-29  
 
 ## 1. 端目标
@@ -35,6 +35,7 @@
 - 首页工作台
 - 分销中心
 - 收益中心
+- 券转赠
 - 司机专区
 - 消息中心
 - 我的与司机资料
@@ -54,6 +55,8 @@
 | `UI-DRV-L-008` | 收益总览页 | `/pages/driver/finance/summary` | 已通过司机能力校验 | 查看待入账收益、可用余额、即将过期券 | P0 |
 | `UI-DRV-L-009` | 台账明细页 | `/pages/driver/finance/ledger` | 已通过司机能力校验 | 查看佣金入账、冲销、专区消费、退款逆分录 | P0 |
 | `UI-DRV-L-010` | 券与权益页 | `/pages/driver/finance/coupons` | 已通过司机能力校验 | 查看返现券、门槛、有效期、可用场景 | P0 |
+| `UI-DRV-L-015` | 券转赠页 | `/pages/driver/finance/coupon-transfer/send` | 已通过司机能力校验 | 选择转赠方式、确认接收司机、发起转赠 | P1 |
+| `UI-DRV-L-016` | 券领取页 | `/pages/driver/finance/coupon-transfer/claim` | 已登录司机视角 | 预览他人转赠的券并领取到本人账户 | P1 |
 | `UI-DRV-L-011` | 司机专区首页 | `/pages/driver-zone/home` | 已通过司机能力校验 | 浏览早餐、充电、洗车等专区商品 | P0 |
 | `UI-DRV-L-012` | 司机专区下单页 | `/pages/driver-zone/checkout` | 已通过司机能力校验 | 选择券、余额和下单信息完成购买 | P0 |
 | `UI-DRV-L-013` | 消息中心页 | `/pages/driver/messages` | 已登录司机视角 | 查看审核、收益、活动、工单消息 | P1 |
@@ -72,11 +75,13 @@
 | `UI-DRV-L-007` | 订单筛选、订单列表、归因明细、收益状态标签 | 按业务线筛选、按状态筛选、查看订单明细 | 司机能力为已通过 | 无归因订单时显示拉新引导；数据延迟时展示同步说明 |
 | `UI-DRV-L-008` | 待入账、可用余额、券价值、冻结/逆冲提示 | 查看台账、查看券、进入司机专区 | 司机能力为已通过 | 余额为 0 时引导去分销或专区活动 |
 | `UI-DRV-L-009` | 台账筛选、分录列表、分录详情抽屉 | 按类型过滤、按日期过滤、查看来源订单 | 司机能力为已通过 | 暂无分录时解释“支付完成后才返佣” |
-| `UI-DRV-L-010` | 券列表、失效提醒、使用规则说明 | 查看券详情、查看可用商品、跳转专区下单 | 司机能力为已通过 | 无券时引导参与活动；临期券高亮提醒 |
+| `UI-DRV-L-010` | 券列表、失效提醒、使用规则说明、转赠入口 | 查看券详情、查看可用商品、发起转赠、跳转专区下单 | 司机能力为已通过 | 无券时引导参与活动；不可转赠券展示原因；临期券高亮提醒 |
+| `UI-DRV-L-015` | 转赠方式选择、接收方确认、券摘要、分享面板 | 选择微信转赠、输入手机号、取消待领取转赠 | 司机能力为已通过；券允许转赠且未被锁定 | 接收方不是司机、券已锁定、冻结期未结束时阻断提交 |
+| `UI-DRV-L-016` | 券预览卡、发送方信息、领取按钮、结果反馈 | 领取转赠券、查看转赠规则、进入我的券页 | 已登录司机视角；打开有效领取链接 | 链接失效、已被领取、无司机能力时展示不可领取说明 |
 | `UI-DRV-L-011` | 分类导航、商品卡片、权益 banner、最近订单 | 查看商品详情、切换分类、进入结算页 | 司机能力为已通过 | 分类无商品时显示替代推荐 |
 | `UI-DRV-L-012` | 地址/提货信息、券选择、余额抵扣、确认订单 | 提交订单、选择券、切换余额抵扣 | 司机能力为已通过；商品可售 | 库存不足、券失效、余额不足时阻断提交 |
 | `UI-DRV-L-013` | 消息分类、未读标记、跳转链接 | 查看详情、已读、跳转对应业务页面 | 已登录司机视角 | 无消息时展示订阅说明 |
-| `UI-DRV-L-014` | 工单创建表单、我的工单列表、工单详情 | 新建工单、补充材料、查看处理结果 | 已登录司机视角 | 无关联业务对象时限制提交；上传附件失败时重试 |
+| `UI-DRV-L-014` | 工单创建表单、我的工单列表、工单详情 | 新建工单、补充材料、查看处理结果 | 已登录司机视角 | 无关联业务对象时限制提交；转赠争议可绑定转赠记录；上传附件失败时重试 |
 
 ## 6. 状态流转
 
@@ -134,7 +139,7 @@ flowchart LR
 | 归因会话 | 生效中/已失效 | `UI-DRV-L-007` | 失效后新订单不再归因 |
 | 归因订单 | 待支付/已支付/已退款 | `UI-DRV-L-007` | 只有已支付才会驱动返佣 |
 | 佣金分录 | 待入账/已入账/已冲销 | `UI-DRV-L-008/009` | 退款会产生逆向分录 |
-| 返现券 | 未生效/可使用/已使用/已过期 | `UI-DRV-L-010` | 过期券只保留记录，不可再核销 |
+| 返现券 | 未生效/可使用/锁定待领取/已使用/已过期 | `UI-DRV-L-010/015/016` | 锁定中的券不可核销或重复转赠 |
 
 ### 6.4 司机专区消费流
 
@@ -156,7 +161,28 @@ flowchart LR
 | 提交订单 | 待创建订单 | 已创建 | 下单接口必须幂等 |
 | 订单退款 | 已创建/已完成 | 退款中/已退款 | 由后台处理，轻端只读展示 |
 
-### 6.5 消息与工单流
+### 6.5 券转赠流
+
+```mermaid
+flowchart LR
+    list["券与权益页查看可转赠券"] --> send["进入转赠页"]
+    send --> choose["选择微信或手机号转赠"]
+    choose --> lock["发起转赠并锁券"]
+    lock --> share["生成分享卡片/发送定向通知"]
+    share --> preview["接收方进入领取页预览"]
+    preview --> claim{"是否成功领取"}
+    claim -- 是 --> done["券归属切换并通知双方"]
+    claim -- 否 --> rollback["取消或超时回退给发送方"]
+```
+
+| 触发动作 | 来源状态 | 目标状态 | 约束 |
+|---|---|---|---|
+| 发起转赠 | 可使用 | 锁定待领取 | 仅 `transferable=true` 且已过冻结期的券可发起 |
+| 取消转赠 | 锁定待领取 | 可使用 | 仅发送方可取消，且接收方未领取 |
+| 成功领取 | 锁定待领取 | 可使用 | 接收方必须是已开通司机能力的账户 |
+| 超时回退 | 锁定待领取 | 可使用 | 超过 `lockExpiresAt` 后自动回退给发送方 |
+
+### 6.6 消息与工单流
 
 ```mermaid
 flowchart LR
@@ -184,6 +210,11 @@ flowchart LR
 | `API-025` | `GET` | `/api/v1/driver/finance/summary` | `UI-DRV-L-008` | `cityCode` | `pendingIncome`, `availableBalance`, `couponValue`, `negativeBalanceFlag` | 返回是否存在负余额提示 |
 | `API-026` | `GET` | `/api/v1/driver/finance/ledger` | `UI-DRV-L-009` | `ledgerType`, `dateRange`, `pageNo`, `pageSize` | `items[]`, `total`, `nextCursor` | 金额只读，不允许前端计算汇总值 |
 | `API-027` | `GET` | `/api/v1/driver/finance/coupons` | `UI-DRV-L-010` | `couponStatus`, `scene`, `pageNo`, `pageSize` | `items[]`, `expiringSoonCount` | 默认按可使用优先排序 |
+| `API-067` | `POST` | `/api/v1/driver/finance/coupons/{couponId}/transfers` | `UI-DRV-L-015` | `transferMethod`, `recipientMobile`, `shareMessage` | `transferId`, `transferStatus`, `shareLink`, `lockExpiresAt` | 同一张券只允许一个待领取转赠 |
+| `API-068` | `POST` | `/api/v1/driver/finance/coupon-transfers/{transferId}/claim` | `UI-DRV-L-016` | `claimToken` | `transferStatus`, `couponId`, `recipientDriverId` | 领取成功后立即切换券当前持有人 |
+| `API-069` | `POST` | `/api/v1/driver/finance/coupon-transfers/{transferId}/cancel` | `UI-DRV-L-015` | `reason` | `transferStatus`, `couponStatus` | 仅发送方可取消待领取转赠 |
+| `API-070` | `GET` | `/api/v1/driver/finance/coupon-transfers` | `UI-DRV-L-010/015` | `transferDirection`, `transferStatus`, `pageNo`, `pageSize` | `items[]`, `total` | 支持查看我发出和我收到的记录 |
+| `API-071` | `GET` | `/api/v1/driver/finance/coupon-transfers/{transferId}` | `UI-DRV-L-016` | `transferId`, `claimToken` | `transfer`, `couponSummary`, `claimable` | 微信分享领取页依赖该接口做预览与资格校验 |
 | `API-028` | `GET` | `/api/v1/driver/access/application` | `UI-DRV-L-003/004` | 无 | `applicationId`, `status`, `rejectReasons`, `submittedAt`, `reviewTimeline[]` | 无申请记录时返回空态，不视为错误 |
 | `API-029` | `GET` | `/api/v1/messages` | `UI-DRV-L-013` | `receiverRole=driver`, `messageType`, `pageNo`, `pageSize` | `items[]`, `unreadCount` | 消息点击后由客户端上报已读 |
 | `API-002` | `GET` | `/api/v1/mall/products` | `UI-DRV-L-011` | `scene=driver-zone`, `categoryId`, `keyword` | `items[]`, `categoryTabs[]` | 司机专区复用商城商品体系 |
@@ -191,7 +222,7 @@ flowchart LR
 | `API-007` | `POST` | `/api/v1/mall/orders` | `UI-DRV-L-012` | `scene`, `items[]`, `couponIds[]`, `walletAmount`, `deliveryInfo` | `orderId`, `orderStatus`, `deductionSummary` | 必带 `X-Idempotency-Key` |
 | `API-062` | `GET` | `/api/v1/mall/orders` | `UI-DRV-L-011/014` | `scene=driver-zone`, `orderStatus`, `pageNo`, `pageSize` | `items[]`, `total` | 展示司机专区历史订单 |
 | `API-063` | `GET` | `/api/v1/mall/orders/{orderId}` | `UI-DRV-L-014` | `orderId` | `order`, `refundInfo`, `ledgerRefs[]` | 用于工单提交时绑定业务对象 |
-| `API-018` | `POST` | `/api/v1/support/tickets` | `UI-DRV-L-014` | `bizType`, `bizId`, `ticketType`, `description`, `attachments[]` | `ticketId`, `status` | 工单必须绑定订单或台账对象之一 |
+| `API-018` | `POST` | `/api/v1/support/tickets` | `UI-DRV-L-014` | `bizType`, `bizId`, `ticketType`, `description`, `attachments[]` | `ticketId`, `status` | 工单必须绑定订单、台账、券记录或转赠记录之一 |
 | `API-064` | `GET` | `/api/v1/support/tickets` | `UI-DRV-L-014` | `initiatorRole=driver`, `ticketStatus`, `pageNo`, `pageSize` | `items[]`, `total` | 返回我的工单列表 |
 | `API-065` | `GET` | `/api/v1/support/tickets/{ticketId}` | `UI-DRV-L-014` | `ticketId` | `ticket`, `timeline[]`, `attachments[]` | 只允许查看本人创建工单 |
 
@@ -208,7 +239,9 @@ flowchart LR
 | `UI-DRV-L-007` | `API-024` | 无 | 切换筛选项即时刷新 |
 | `UI-DRV-L-008` | `API-025` | 无 | 进入页面拉取，支付回调后消息驱动刷新 |
 | `UI-DRV-L-009` | `API-026` | 无 | 分页加载 |
-| `UI-DRV-L-010` | `API-027` | 无 | 进入页面拉取，返回结算页时局部刷新 |
+| `UI-DRV-L-010` | `API-027`, `API-070` | 无 | 进入页面拉取，转赠动作成功后局部刷新 |
+| `UI-DRV-L-015` | `API-027`, `API-070` | `API-067`, `API-069` | 发起或取消后局部刷新当前券与转赠记录 |
+| `UI-DRV-L-016` | `API-071` | `API-068` | 进入页面先预览，领取成功后跳转我的券页 |
 | `UI-DRV-L-011` | `API-002`, `API-062` | 无 | 类目切换刷新商品列表 |
 | `UI-DRV-L-012` | `API-066` | `API-007` | 每次进入结算页强制重查商品与券可用性 |
 | `UI-DRV-L-013` | `API-029` | 无 | 进入页面拉取，Tab 红点按未读数更新 |
@@ -219,6 +252,8 @@ flowchart LR
 - 首页、收益页、分销页的关键摘要必须取聚合结果，不允许前端自行汇总台账。
 - 所有返佣展示都必须标注“支付成功后入账”，避免司机误以为下单即返。
 - 司机专区只允许站内余额和返现券抵扣，不提供微信提现或银行卡提现入口。
+- 处于 `locked_transfer` 的券必须从可核销列表中移除，并明确显示“转赠处理中”。
+- 券领取页必须在提交领取前再次校验接收方司机能力，防止分享链接被非司机账户误领。
 - 被暂停能力的司机仍可查看历史数据，但对应入口必须置灰并展示停用原因。
 - 小程序端不展示“上线接单”“保持在线”“后台定位正常”之类履约态提示，避免形成错误心智。
 
@@ -226,6 +261,7 @@ flowchart LR
 
 - 二维码海报首版是否只提供固定模板，暂不开放司机自定义文案。
 - 已确认司机专区支持到店核销、到店自提、配送三种履约模式并存，但单个商品只允许配置一种履约模式。
+- 券转赠冻结期的默认时长是否统一为支付入账后 `24h`，还是按券模板单独配置。
 - 消息中心的未读红点是全局一个红点，还是按“审核/收益/工单”三类分组显示。
 
 ## 10. 变更记录
@@ -234,3 +270,4 @@ flowchart LR
 |---|---|---|
 | 2026-03-29 | 初始版本 | AI 软件工厂 |
 | 2026-03-29 | 补充逐页职责、状态定义、共享接口与页面映射 | AI 软件工厂 |
+| 2026-03-29 | 补充 `REQ-018` 券转赠页面、状态流与接口映射 | AI 软件工厂 |

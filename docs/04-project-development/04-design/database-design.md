@@ -6,7 +6,7 @@
 **主要读者：** 后端 | DBA | QA | 运维  
 **上游输入：** 系统详细设计 | 接口与契约设计 | 数据库 ER 图  
 **下游输出：** 数据迁移设计 | 仓储实现 | 对账方案  
-**关联 ID：** `DATA-001` - `DATA-041`, `REQ-001` - `REQ-017`  
+**关联 ID：** `DATA-001` - `DATA-042`, `REQ-001` - `REQ-018`  
 **最后更新：** 2026-03-29  
 
 ## 1. 总体策略
@@ -44,6 +44,7 @@
 | `dispatch:driver:{driverId}` | 司机在线短态 | 90s 滚动续期 |
 | `dispatch:request:{requestId}` | 派单运行态 | 30m |
 | `coupon:usable:{driverId}` | 司机可用券缓存 | 10m |
+| `coupon_transfer:pending:{driverId}` | 司机待领取/待完成转赠短态 | 24h |
 | `dashboard:driver:{driverId}` | 司机工作台聚合缓存 | 30s |
 
 ## 4. 统一命名与字段约定
@@ -326,6 +327,7 @@
 | `DATA-025` | `coupon_template` | `coupon_template_id` | 券模板 |
 | `DATA-026` | `coupon_record` | `coupon_record_id` | 券实例 |
 | `DATA-027` | `refund_record` | `refund_record_id` | 退款记录 |
+| `DATA-042` | `coupon_transfer_record` | `coupon_transfer_id` | 券转赠记录 |
 
 #### `finance.commission_rule`
 
@@ -392,12 +394,46 @@
 
 - `coupon_template_id`
 - `driver_id`
+- `original_driver_id`
 - `coupon_status`
+- `transferable_flag`
+- `transfer_status`
+- `transfer_available_at`
+- `transfer_count`
 - `issued_from_source_type`
 - `issued_from_source_id`
 - `face_value`
 - `used_order_id`
 - `expires_at`
+
+说明：
+
+- `driver_id` 表示券的当前持有人。
+- `original_driver_id` 表示最初发券接收司机，用于审计和来源追溯。
+- `transfer_count` 首版最大只允许成功转赠一次，值域为 `0` 或 `1`。
+
+#### `finance.coupon_transfer_record`
+
+| 字段 | 类型 | 约束 | 说明 |
+|---|---|---|---|
+| `coupon_transfer_id` | `uuid` | PK | 转赠记录主键 |
+| `coupon_record_id` | `uuid` | FK -> `coupon_record.coupon_record_id` | 转赠券实例 |
+| `sender_driver_id` | `uuid` | FK | 发起转赠的司机 |
+| `recipient_driver_id` | `uuid` | FK，可空 | 接收司机；手机号转赠在锁定时即可写入 |
+| `transfer_method` | `varchar(32)` | IDX | `wechat`, `mobile` |
+| `transfer_status` | `varchar(32)` | IDX | `pending_claim`, `claimed`, `cancelled`, `expired` |
+| `recipient_mobile_encrypted` | `varchar(255)` |  | 手机号定向转赠的加密手机号 |
+| `claim_token_digest` | `varchar(255)` |  | 领取令牌摘要，不存明文 |
+| `lock_expires_at` | `timestamp` | IDX | 待领取锁定到期时间 |
+| `claimed_at` | `timestamp` |  | 领取完成时间 |
+| `cancelled_at` | `timestamp` |  | 取消时间 |
+| `audit_snapshot` | `jsonb` |  | 发起时的券快照与接收约束 |
+
+索引建议：
+
+- `uk_coupon_transfer_pending (coupon_record_id, transfer_status)` where `transfer_status = 'pending_claim'`
+- `idx_coupon_transfer_sender_created (sender_driver_id, created_at desc)`
+- `idx_coupon_transfer_recipient_created (recipient_driver_id, created_at desc)`
 
 #### `finance.refund_record`
 
@@ -511,6 +547,7 @@
 - `dispatch_request 1 -> n dispatch_attempt`
 - `wallet_account 1 -> n wallet_entry`
 - `commission_ledger 1 -> n wallet_entry`
+- `coupon_record 1 -> n coupon_transfer_record`
 - `support_ticket 1 -> n support_ticket_timeline`
 
 ## 7. 状态与一致性规则
@@ -518,6 +555,8 @@
 - 商城订单和行程订单都只有支付成功后才能触发资金入账。
 - 退款必须先生成 `refund_record`，再由 `wallet_entry` 和 `commission_ledger` 做逆向分录。
 - 负余额状态由 `wallet_account.balance_status` 标记，但金额以 `wallet_entry` 聚合校验。
+- 券转赠期间 `coupon_record.coupon_status` 必须进入 `locked_transfer`，且不得参与司机专区核销。
+- 转赠取消、超时或领取后，`coupon_record.transfer_status` 与 `coupon_transfer_record.transfer_status` 必须保持一致。
 - 司机专区订单的履约模式一旦下单，不允许后台直接改成另一种履约模式。
 
 ## 8. 分区、归档与保留策略
@@ -539,3 +578,4 @@
 |---|---|---|
 | 2026-03-29 | 初始版本 | AI 软件工厂 |
 | 2026-03-29 | 扩展为多 schema 详细设计，补充表结构、索引、状态与保留策略 | AI 软件工厂 |
+| 2026-03-29 | 补充 `REQ-018` 券转赠数据模型、Redis 短态和一致性规则 | AI 软件工厂 |

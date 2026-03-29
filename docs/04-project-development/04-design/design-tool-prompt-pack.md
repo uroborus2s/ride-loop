@@ -13,7 +13,7 @@
 - 第一步：把“端级主提示词”粘贴给设计软件，先生成整端视觉系统。
 - 第二步：再粘贴对应“页面级提示词”，生成单页布局。
 - 第三步：用“审稿提示词”让设计软件回查缺失状态、组件和交互。
-- 第四步：用 [页面级详细设计矩阵](/Users/uroborus/NodeProject/ride-loop/docs/04-project-development/04-design/ui-page-detail-matrix.md) 对照补字段和状态。
+- 第四步：用 [页面级详细设计矩阵](./ui-page-detail-matrix.md) 对照补字段和状态。
 
 ## 2. 通用提示词模板
 
