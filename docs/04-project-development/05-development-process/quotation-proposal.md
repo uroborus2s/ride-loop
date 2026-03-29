@@ -78,6 +78,7 @@
 
 ## 4. 本次报价不包含范围
 
+- [外部服务清单](../08-operations-maintenance/external-services-register.md)
 - 已完成的需求调研、PRD、系统设计、OpenAPI 设计等文档工作量
 - 第三方平台账号申请、资质办理、合同签约和预充值
 - 微信支付、短信、地图、对象存储、CDN、云主机、数据库、Redis 等实际服务费用
@@ -87,8 +88,6 @@
 - 提现能力、清分到银行卡、对公结算等资金能力
 - 高精度真实计价引擎、复杂动态调价和高级风控规则引擎
 - 商家独立端、BI 深度经营分析平台
-
-外部依赖明细由内部运维文档维护，不纳入对外页面默认公开范围。
 
 ## 5. 付款节点建议
 
@@ -179,7 +178,7 @@
 
 - [工作量评估详单](quotation-task-breakdown.md)
 - [实施计划](implementation-plan.md)
-- 外部服务清单由内部运维文档维护
+- [外部服务清单](../08-operations-maintenance/external-services-register.md)
 - [PRD](../03-requirements/prd.md)
 - [系统架构](../04-design/system-architecture.md)
 

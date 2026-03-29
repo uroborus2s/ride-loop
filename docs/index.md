@@ -129,9 +129,6 @@ mkdocs:
             - title: 任务分解文档
               path: 04-project-development/05-development-process/task-breakdown.md
               access: public
-            - title: 工作量评估首页
-              path: 04-project-development/05-development-process/business-overview.md
-              access: public
             - title: 工作量评估说明
               path: 04-project-development/05-development-process/quotation-proposal.md
               access: public
@@ -161,7 +158,7 @@ mkdocs:
               access: private
             - title: 上线外部服务清单
               path: 04-project-development/08-operations-maintenance/external-services-register.md
-              access: private
+              access: public
         - title: 演进复盘
           children:
             - title: 概览
